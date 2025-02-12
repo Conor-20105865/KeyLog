@@ -58,6 +58,7 @@ int main() {
 #include <linux/input.h>
 #include <unistd.h>
 
+// current path is specific to latest ubuntu have not checke other systems
 #define DEVICE "/dev/input/by-path/platform-i8042-serio-0-event-kbd"  // Change to your keyboard event file
 
 int main() {
