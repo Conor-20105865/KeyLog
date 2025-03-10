@@ -32,5 +32,6 @@ For macOS
 
     Ethical Use: This keylogger is intended for educational purposes only. Do not use this tool for malicious activities.
     Unauthorized use of keyloggers is illegal and unethical.
-    Permissions: On Linux, Windows and macOS, the program may require root permissions to access the keyboard device or system events.
+    Permissions:
+    On Linux, Windows and macOS, the program may require root permissions to access the keyboard device or system events.
     Make sure you have the necessary permissions before running the keylogger.
