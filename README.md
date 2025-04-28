@@ -4,11 +4,12 @@ This project is a simple system-wide keylogger that works across multiple platfo
 
 # Features
 
-    Supports Windows, Linux, and macOS.
+    Supports Windows, Linux, and MacOS.
     Logs keystrokes to a file keystrokes.txt.
     Windows version uses SetWindowsHookEx to capture keyboard events.
     Linux version uses /dev/input to capture keypresses from the keyboard device.
-    macOS version uses CGEventTap to intercept keyboard events.
+    MacOS version uses CGEventTap to intercept keyboard events.
+    Linux and MacOS versions now run as a Daemon
 
 # Requirements
 For Windows
