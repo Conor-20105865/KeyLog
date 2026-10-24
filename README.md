@@ -1,6 +1,8 @@
 # Cross-Platform Keylogger
 
-An educational **C-based cybersecurity proof-of-concept** exploring system-wide keyboard event handling across **Windows, Linux, and macOS**.
+An educational C project exploring operating system keyboard event handling on Windows, Linux and macOS.
+
+The repository contains separate implementations for each platform using conditional compilation. Compatibility and successful compilation have not been verified across all three operating systems.
 
 The project demonstrates how different operating systems expose low-level keyboard events and how platform-specific APIs can be used to monitor and process those events. It also explores system permissions, background processes, keyboard input handling, and the security and privacy implications of input monitoring.
 
@@ -167,6 +169,7 @@ Current limitations include:
 * Platform-specific permissions are required.
 * The implementations depend on operating-system-specific APIs.
 * The project does not provide a unified installation or build system.
+* The current source includes Unix specific headers outside the operating system checks, which may prevent compilation using standard Windows development tools.
 
 These limitations are intentional opportunities for further development and learning.
 
